@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    match /languageConfigs/{langCode} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /skillGraph/{skillId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /userProgress/{docId} {
+      allow read, write: if request.auth != null
+        && docId.matches(request.auth.uid + '_.*');
+    }
+
+    match /exercises/{exerciseId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /mistakes/{docId} {
+      allow read, write: if request.auth != null
+        && docId.matches(request.auth.uid + '_.*');
+    }
+  }
+}

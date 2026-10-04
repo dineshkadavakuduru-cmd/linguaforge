@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-base: #0a0a0f;
+  --bg-surface: #111118;
+  --bg-elevated: #1a1a24;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.12);
+  --accent-primary: #6c63ff;
+  --accent-glow: rgba(108, 99, 255, 0.3);
+  --correct: #10b981;
+  --wrong: #f43f5e;
+  --due-soon: #f59e0b;
+  --locked: #3f3f46;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Cal Sans", "Inter", system-ui, sans-serif;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+}
+
+.light {
+  --bg-base: #fafafa;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f4f4f5;
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-default: rgba(0, 0, 0, 0.12);
+  --accent-primary: #6c63ff;
+  --accent-glow: rgba(108, 99, 255, 0.3);
+  --correct: #10b981;
+  --wrong: #f43f5e;
+  --due-soon: #f59e0b;
+  --locked: #a1a1aa;
+}
+
+* {
+  border-color: var(--border-subtle);
+}
+
+html {
+  background: var(--bg-base);
+}
+
+body {
+  min-height: 100dvh;
+  background: var(--bg-base);
+  color: #f4f4f5;
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+}
+
+.light body {
+  color: #18181b;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(108, 99, 255, 0.35);
+  color: #fff;
+}
