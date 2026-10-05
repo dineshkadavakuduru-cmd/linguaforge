@@ -62,7 +62,7 @@ export function StreakCalendar({ uid }: { uid: string }) {
       <section className="rounded-xl border border-default bg-surface p-6 animate-pulse">
         <div className="flex items-end justify-between gap-4">
           <div><p className="text-sm text-zinc-400">Practice history</p><h2 className="mt-1 font-display text-2xl tracking-tight text-white">A year in review</h2></div>
-          <span className="hidden text-xs text-zinc-600 sm:block">Last 52 weeks</span>
+          <span className="hidden text-xs text-zinc-500 sm:block">Last 52 weeks</span>
         </div>
         <div className="mt-6 overflow-x-auto pb-1">
           <svg aria-label="Practice activity heatmap" role="img" viewBox="0 0 620 88" className="h-auto min-w-[580px] w-full">
@@ -70,7 +70,7 @@ export function StreakCalendar({ uid }: { uid: string }) {
             {weeks.flatMap((week) => days.map((day) => <rect key={`${week}-${day}`} x={22 + week * 11} y={7 + day * 10} width="7" height="7" rx="2" fill={levels[0]} />))}
           </svg>
         </div>
-        <div className="mt-3 flex items-center justify-end gap-2 text-[10px] text-zinc-600"><span>Less</span>{levels.map((level) => <span key={level} className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: level }} />)}<span>More</span></div>
+        <div className="mt-3 flex items-center justify-end gap-2 text-[10px] text-zinc-500"><span>Less</span>{levels.map((level) => <span key={level} className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: level }} />)}<span>More</span></div>
       </section>
     );
   }
@@ -79,7 +79,7 @@ export function StreakCalendar({ uid }: { uid: string }) {
     <section className="rounded-xl border border-default bg-surface p-6">
       <div className="flex items-end justify-between gap-4">
         <div><p className="text-sm text-zinc-400">Practice history</p><h2 className="mt-1 font-display text-2xl tracking-tight text-white">A year in review</h2></div>
-        <span className="hidden text-xs text-zinc-600 sm:block">Last 52 weeks</span>
+        <span className="hidden text-xs text-zinc-500 sm:block">Last 52 weeks</span>
       </div>
       <div className="mt-6 overflow-x-auto pb-1">
         <svg aria-label="Practice activity heatmap" role="img" viewBox="0 0 620 88" className="h-auto min-w-[580px] w-full">
@@ -92,7 +92,7 @@ export function StreakCalendar({ uid }: { uid: string }) {
           }))}
         </svg>
       </div>
-      <div className="mt-3 flex items-center justify-end gap-2 text-[10px] text-zinc-600"><span>Less</span>{levels.map((level) => <span key={level} className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: level }} />)}<span>More</span></div>
+      <div className="mt-3 flex items-center justify-end gap-2 text-[10px] text-zinc-500"><span>Less</span>{levels.map((level) => <span key={level} className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: level }} />)}<span>More</span></div>
     </section>
   );
 }

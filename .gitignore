@@ -6,3 +6,5 @@ out/
 .env.*.local
 firebase-debug.log
 functions/lib/
+
+.vercel

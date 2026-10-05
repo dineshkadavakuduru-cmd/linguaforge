@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { motion } from "motion/react";
 import { Check, Send, X } from "lucide-react";
 import { correctFlash, wrongShake } from "@/lib/motion";
+import { MAX_ANSWER_LENGTH } from "@/lib/utils";
 
 function normalize(value: string) {
   return value.trim().toLocaleLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -13,14 +14,16 @@ export function ErrorCorrectionInput({
   prompt,
   correctAnswer,
   disabled,
+  initialAnswer = "",
   onAnswered,
 }: {
   prompt: string;
   correctAnswer: string | string[];
   disabled: boolean;
+  initialAnswer?: string;
   onAnswered: (answer: string, correct: boolean) => void;
 }) {
-  const [answer, setAnswer] = useState("");
+  const [answer, setAnswer] = useState(initialAnswer);
   const [result, setResult] = useState<boolean | null>(null);
   const acceptedAnswers = Array.isArray(correctAnswer) ? correctAnswer : [correctAnswer];
 
@@ -47,8 +50,9 @@ export function ErrorCorrectionInput({
           onChange={(event) => setAnswer(event.target.value)}
           disabled={disabled || result !== null}
           rows={4}
+          maxLength={MAX_ANSWER_LENGTH}
           placeholder="Write the corrected sentence"
-          className="block w-full resize-none rounded-md bg-white/[0.03] p-4 text-base leading-6 text-white outline-none placeholder:text-zinc-600 focus:bg-white/[0.06]"
+          className="block w-full resize-none rounded-md bg-white/[0.03] p-4 text-base leading-6 text-white outline-none placeholder:text-zinc-500 focus:bg-white/[0.06]"
         />
       </motion.div>
       <button

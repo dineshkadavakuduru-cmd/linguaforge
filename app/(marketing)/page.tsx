@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import LandingClient from "@/components/marketing/LandingClient";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "LinguaForge | Learn languages. Actually remember them.",
-  description: "A calmer language learning workspace built around deliberate practice and memory-aware review.",
+  alternates: { canonical: "/" },
   openGraph: {
-    title: "LinguaForge | Learn languages. Actually remember them.",
-    description: "Deliberate exercises and intelligent review for language learners.",
-    type: "website",
+    url: SITE_URL,
   },
 };
 

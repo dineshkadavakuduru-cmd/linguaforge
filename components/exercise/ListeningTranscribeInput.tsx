@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { motion } from "motion/react";
 import { Check, Send, Volume2, X } from "lucide-react";
 import { correctFlash, wrongShake } from "@/lib/motion";
+import { MAX_ANSWER_LENGTH } from "@/lib/utils";
 
 function normalize(value: string) {
   return value.trim().toLocaleLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -13,16 +14,18 @@ export function ListeningTranscribeInput({
   prompt,
   correctAnswer,
   disabled,
+  initialAnswer = "",
   onAnswered,
 }: {
   prompt: string;
   correctAnswer: string | string[];
   disabled: boolean;
+  initialAnswer?: string;
   onAnswered: (answer: string, correct: boolean) => void;
 }) {
-  const [answer, setAnswer] = useState("");
+  const [answer, setAnswer] = useState(initialAnswer);
   const [result, setResult] = useState<boolean | null>(null);
-  const [played, setPlayed] = useState(false);
+  const [played, setPlayed] = useState(Boolean(initialAnswer));
   const acceptedAnswers = Array.isArray(correctAnswer) ? correctAnswer : [correctAnswer];
 
   function handlePlay() {
@@ -75,8 +78,9 @@ export function ListeningTranscribeInput({
           onChange={(event) => setAnswer(event.target.value)}
           disabled={disabled || result !== null || !played}
           rows={3}
+          maxLength={MAX_ANSWER_LENGTH}
           placeholder={played ? "Type what you heard (in romaji/translation)" : "Listen first, then type"}
-          className="block w-full resize-none rounded-md bg-white/[0.03] p-4 text-base leading-6 text-white outline-none placeholder:text-zinc-600 focus:bg-white/[0.06] disabled:opacity-50"
+          className="block w-full resize-none rounded-md bg-white/[0.03] p-4 text-base leading-6 text-white outline-none placeholder:text-zinc-500 focus:bg-white/[0.06] disabled:opacity-50"
         />
       </motion.div>
       <button

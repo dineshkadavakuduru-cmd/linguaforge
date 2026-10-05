@@ -4,19 +4,22 @@ import { FormEvent, useState } from "react";
 import { motion } from "motion/react";
 import { Send, BookOpen, Sparkles } from "lucide-react";
 import { correctFlash } from "@/lib/motion";
+import { MAX_ANSWER_LENGTH } from "@/lib/utils";
 
 export function StoryCompletionInput({
   prompt,
   correctAnswer,
   disabled,
+  initialAnswer = "",
   onAnswered,
 }: {
   prompt: string;
   correctAnswer: string | string[];
   disabled: boolean;
+  initialAnswer?: string;
   onAnswered: (answer: string, correct: boolean) => void;
 }) {
-  const [answer, setAnswer] = useState("");
+  const [answer, setAnswer] = useState(initialAnswer);
   const [result, setResult] = useState<boolean | null>(null);
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -42,8 +45,9 @@ export function StoryCompletionInput({
           onChange={(event) => setAnswer(event.target.value)}
           disabled={disabled || result !== null}
           rows={3}
+          maxLength={MAX_ANSWER_LENGTH}
           placeholder="Write the next sentence..."
-          className="block w-full resize-none rounded-md bg-white/[0.03] p-4 text-base leading-6 text-white outline-none placeholder:text-zinc-600 focus:bg-white/[0.06]"
+          className="block w-full resize-none rounded-md bg-white/[0.03] p-4 text-base leading-6 text-white outline-none placeholder:text-zinc-500 focus:bg-white/[0.06]"
         />
       </motion.div>
       <button
@@ -60,7 +64,7 @@ export function StoryCompletionInput({
             <div>
               <p className="font-medium text-emerald-200">Story continued</p>
               <p className="mt-1 text-sm leading-6 text-zinc-300">
-                Your sentence has been added to the story. Since this is a creative exercise, there's no single correct answer.
+                Your sentence has been added to the story. Since this is a creative exercise, there&apos;s no single correct answer.
               </p>
               {correctAnswer && (
                 <p className="mt-3 text-sm leading-6 text-zinc-400">

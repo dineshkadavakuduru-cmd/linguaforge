@@ -10,11 +10,13 @@ interface MCQOptionsProps {
   options: string[];
   correctAnswer: string | string[];
   disabled?: boolean;
+  /** Previously selected option, used when restoring a session after refresh. */
+  selectedAnswer?: string | null;
   onAnswered: (answer: string, correct: boolean) => void;
 }
 
-export function MCQOptions({ options, correctAnswer, disabled = false, onAnswered }: MCQOptionsProps) {
-  const [selected, setSelected] = useState<string | null>(null);
+export function MCQOptions({ options, correctAnswer, disabled = false, selectedAnswer = null, onAnswered }: MCQOptionsProps) {
+  const [selected, setSelected] = useState<string | null>(selectedAnswer);
   const answer = Array.isArray(correctAnswer) ? correctAnswer[0] : correctAnswer;
 
   function choose(option: string) {
@@ -24,7 +26,7 @@ export function MCQOptions({ options, correctAnswer, disabled = false, onAnswere
   }
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid gap-3 sm:grid-cols-2" role="group" aria-label="Answer choices">
       {options.map((option, index) => {
         const isSelected = selected === option;
         const isCorrect = isSelected && option.trim().toLowerCase() === answer.trim().toLowerCase();
@@ -34,19 +36,20 @@ export function MCQOptions({ options, correctAnswer, disabled = false, onAnswere
             key={`${option}-${index}`}
             type="button"
             disabled={disabled || Boolean(selected)}
+            aria-pressed={isSelected}
             onClick={() => choose(option)}
             whileTap={{ scale: 0.98 }}
             {...(isCorrect ? correctFlash : {})}
             {...(isWrong ? wrongShake : {})}
             className={cn(
-              "flex min-h-14 items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-4 text-left text-sm text-zinc-200 transition-colors hover:border-accent-primary/50 hover:bg-white/[0.06] disabled:cursor-default",
+              "flex min-h-14 items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-4 text-left text-sm text-zinc-200 transition-colors hover:border-accent-primary/50 hover:bg-white/[0.06] focus-visible:border-accent-primary disabled:cursor-default disabled:opacity-70",
               isCorrect && "border-emerald-400/50 bg-emerald-400/10 text-emerald-100",
               isWrong && "border-rose-400/50 bg-rose-400/10 text-rose-100",
             )}
           >
             <span>{option}</span>
-            {isCorrect && <Check className="h-4 w-4 text-emerald-300" />}
-            {isWrong && <X className="h-4 w-4 text-rose-300" />}
+            {isCorrect && <Check className="h-4 w-4 text-emerald-300" aria-label="Correct answer" />}
+            {isWrong && <X className="h-4 w-4 text-rose-300" aria-label="Incorrect answer" />}
           </motion.button>
         );
       })}
