@@ -167,7 +167,7 @@ export function useAuth() {
 export function useRequireAuth() {
   const router = useRouter();
   const { user, loading, error, retry } = useAuth();
-  const shouldRedirect = !loading && !user;
+  const shouldRedirect = !loading && !user && !error;
 
   useEffect(() => {
     if (shouldRedirect) router.replace("/auth");
