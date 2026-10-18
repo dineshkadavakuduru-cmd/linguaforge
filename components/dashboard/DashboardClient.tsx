@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, RefreshCw, Settings } from "lucide-react";
 import { useAuth, useRequireAuth } from "@/components/providers/AuthProvider";
 import { StreakCard } from "@/components/dashboard/StreakCard";
 import { LanguageCard } from "@/components/dashboard/LanguageCard";
@@ -29,6 +29,8 @@ export default function DashboardClient() {
   const [reviews, setReviews] = useState<ReviewQueueItem[]>([]);
   const [activeLanguages, setActiveLanguages] = useState<string[]>(["es"]);
   const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
   const [signingOut, setSigningOut] = useState(false);
   // Guards the load effect against refires caused by activeLanguages state
   // updates, which previously re-triggered check-in and review fetches.
@@ -44,6 +46,7 @@ export default function DashboardClient() {
 
     async function loadDashboard() {
       setDashboardLoading(true);
+      setDashboardError(null);
       try {
         // Fetch user profile to get activeLanguages
         const profileResponse = await fetch(`/api/profile?uid=${encodeURIComponent(uid)}`);
@@ -69,6 +72,8 @@ export default function DashboardClient() {
         if (checkInResponse.ok) {
           const checkIn = await checkInResponse.json() as CheckInResponse;
           setStreak(checkIn.streakCount);
+        } else if (checkInResponse.status >= 500) {
+          throw new Error("check-in failed");
         }
 
         const reviewPayloads = await Promise.all(
@@ -78,7 +83,9 @@ export default function DashboardClient() {
         );
         setReviews(reviewPayloads.flatMap((payload) => payload.reviews ?? []));
       } catch {
-        // Errors are handled by empty states
+        // A network or server failure must surface a retry — never a silent
+        // empty workspace that looks like "no progress yet".
+        if (active) setDashboardError("We couldn’t load your practice data. Check your connection and try again.");
       } finally {
         if (active) setDashboardLoading(false);
       }
@@ -86,7 +93,13 @@ export default function DashboardClient() {
 
     void loadDashboard();
     return () => { active = false; };
-  }, [user, activeLanguages]);
+  }, [user, activeLanguages, reloadToken]);
+
+  function retryDashboard() {
+    if (!user) return;
+    loadedLanguagesRef.current = null;
+    setReloadToken((token) => token + 1);
+  }
 
   async function handleSignOut() {
     if (signingOut) return;
@@ -120,7 +133,7 @@ export default function DashboardClient() {
       <DesktopSidebar />
       <div className="mx-auto max-w-6xl px-6 py-8 lg:px-12 lg:py-12">
         <Spotlight>
-          <header className="flex items-center justify-between border-b border-white/10 pb-8">
+          <header className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-8">
             <div>
               <p className="text-sm text-zinc-500">Your workspace</p>
               <h1 className="mt-2 font-display text-4xl tracking-tight text-white">Good to see you, {firstName}.</h1>
@@ -161,7 +174,19 @@ export default function DashboardClient() {
             );
           })}
         </div>
-        <div className="mt-10"><SkillQueueGrid reviews={reviews} loading={dashboardLoading} /></div>
+        <div className="mt-10">
+          {dashboardError ? (
+            <section className="rounded-xl border border-rose-400/20 bg-rose-400/10 p-6 text-center" role="alert">
+              <p className="text-sm font-medium text-rose-100">We couldn&apos;t load your practice queue</p>
+              <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-rose-200/80">{dashboardError}</p>
+              <button type="button" onClick={retryDashboard} className="mt-5 inline-flex h-10 items-center gap-2 rounded-md border border-rose-300/20 px-4 text-sm font-medium text-rose-100 hover:bg-rose-300/10">
+                <RefreshCw className="h-4 w-4" aria-hidden="true" /> Retry
+              </button>
+            </section>
+          ) : (
+            <SkillQueueGrid reviews={reviews} loading={dashboardLoading} />
+          )}
+        </div>
         <div className="mt-6"><StreakCalendar uid={user.uid} /></div>
       </div>
       <FloatingNav />

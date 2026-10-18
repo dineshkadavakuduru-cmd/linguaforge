@@ -160,14 +160,21 @@ export function useAuth() {
 }
 
 /**
- * Guards pages that require a signed-in user. Once auth state resolves and the
- * user is missing it redirects to /auth. While `loading` or `shouldRedirect`
- * are true callers must render a skeleton — never the protected page body.
+ * Guards pages that require a signed-in user.
+ *
+ * Redirect state machine (deterministic, never flashes during init):
+ * - `loading`            → render a skeleton, never the page body, never redirect.
+ * - `error` (no user)    → render the error/retry UI, do NOT redirect, so the
+ *                          retry button is reachable instead of bouncing to /auth.
+ * - resolved, no user    → redirect to /auth exactly once.
+ * - resolved, user set   → render the page.
+ *
+ * While `loading` or `shouldRedirect` are true callers must render a skeleton.
  */
 export function useRequireAuth() {
   const router = useRouter();
   const { user, loading, error, retry } = useAuth();
-  const shouldRedirect = !loading && !user && !error;
+  const shouldRedirect = !loading && !error && !user;
 
   useEffect(() => {
     if (shouldRedirect) router.replace("/auth");

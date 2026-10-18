@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft, BookOpen, Loader2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Loader2, WifiOff } from "lucide-react";
 import Link from "next/link";
 import type { ExerciseDoc } from "@/types";
 import { MAX_ANSWER_LENGTH, SESSION_LENGTH, type SaveState } from "@/lib/utils";
@@ -55,6 +55,8 @@ export function ExerciseCard({ uid, lang, skillId }: { uid: string; lang: string
   const [exercise, setExercise] = useState<ExerciseDoc | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notFound, setNotFound] = useState(false);
+  const [online, setOnline] = useState(true);
   const [answered, setAnswered] = useState<{ answer: string; correct: boolean } | null>(null);
   const [saveState, setSaveState] = useState<SaveState | null>(null);
   const [sessionCorrect, setSessionCorrect] = useState(0);
@@ -68,13 +70,21 @@ export function ExerciseCard({ uid, lang, skillId }: { uid: string; lang: string
   const loadExercise = useCallback(async function loadExercise() {
     setLoading(true);
     setError("");
+    setNotFound(false);
     setAnswered(null);
     setSaveState(null);
     submissionLock.current = false;
     try {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        throw new Error("You appear to be offline. Reconnect and try again.");
+      }
       const response = await fetch("/api/generate-exercise", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ uid, lang, skillId }) });
-      const payload = await response.json() as { exercise?: ExerciseDoc; error?: string };
-      if (!response.ok || !payload.exercise) throw new Error(payload.error || "Unable to load exercise.");
+      const payload = await response.json().catch(() => null) as { exercise?: ExerciseDoc; error?: string } | null;
+      if (response.status === 404) {
+        setNotFound(true);
+        throw new Error(payload?.error || "This lesson is not available yet.");
+      }
+      if (!response.ok || !payload?.exercise) throw new Error(payload?.error || "Unable to load exercise.");
       setExercise(payload.exercise);
       exerciseStartTime.current = Date.now();
     } catch (loadError) {
@@ -83,6 +93,19 @@ export function ExerciseCard({ uid, lang, skillId }: { uid: string; lang: string
       setLoading(false);
     }
   }, [uid, lang, skillId]);
+
+  // Keep the UI honest when connectivity drops: the answer can be typed, but
+  // it cannot be scored until the connection returns.
+  useEffect(() => {
+    function updateOnline() { setOnline(typeof navigator === "undefined" ? true : navigator.onLine); }
+    updateOnline();
+    window.addEventListener("online", updateOnline);
+    window.addEventListener("offline", updateOnline);
+    return () => {
+      window.removeEventListener("online", updateOnline);
+      window.removeEventListener("offline", updateOnline);
+    };
+  }, []);
 
   // Restore an in-progress session (e.g. after a refresh) before fetching a
   // brand-new exercise, so refreshes never silently lose session progress.
@@ -152,6 +175,7 @@ export function ExerciseCard({ uid, lang, skillId }: { uid: string; lang: string
   }
 
   if (loading) return <div className="mx-auto w-full max-w-3xl animate-pulse rounded-xl border border-white/10 bg-surface p-8" role="status" aria-label="Loading exercise"><div className="h-4 w-24 rounded bg-white/10" /><div className="mt-8 h-10 w-4/5 rounded bg-white/10" /><div className="mt-10 grid gap-3 sm:grid-cols-2"><div className="h-14 rounded bg-white/10" /><div className="h-14 rounded bg-white/10" /><div className="h-14 rounded bg-white/10" /><div className="h-14 rounded bg-white/10" /></div></div>;
+  if (notFound) return <div role="alert" className="mx-auto w-full max-w-3xl rounded-xl border border-white/10 bg-surface p-6"><p className="font-medium text-white">This lesson isn&apos;t available yet.</p><p className="mt-2 text-sm leading-6 text-zinc-400">{error}</p><div className="mt-5 flex flex-wrap items-center gap-4"><Link href="/dashboard" className="inline-flex h-10 items-center rounded-md bg-accent-primary px-4 text-sm font-semibold text-white">Back to dashboard</Link><button type="button" onClick={() => void loadExercise()} className="rounded text-sm text-zinc-300 underline underline-offset-2 hover:text-white">Try again</button></div></div>;
   if (error) return <div role="alert" className="mx-auto w-full max-w-3xl rounded-xl border border-rose-400/20 bg-rose-400/10 p-6 text-sm text-rose-200">{error}<button type="button" onClick={() => void loadExercise()} className="ml-3 rounded underline underline-offset-2 hover:text-white">Try again</button></div>;
   if (!exercise) return null;
 
@@ -162,6 +186,7 @@ export function ExerciseCard({ uid, lang, skillId }: { uid: string; lang: string
 
   return (
     <div className="mx-auto w-full max-w-3xl">
+      {!online && <div role="status" aria-live="polite" className="mb-5 flex items-center gap-2 rounded-lg border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-200"><WifiOff className="h-4 w-4 shrink-0" aria-hidden="true" />You&apos;re offline. You can keep reading, but answers won&apos;t be scored until you reconnect.</div>}
       <div className="mb-6 flex items-center justify-between text-sm text-zinc-500"><Link href="/dashboard" className="inline-flex items-center gap-2 transition-colors hover:text-white"><ArrowLeft className="h-4 w-4" /> Dashboard</Link><span>{lang === "ja" ? "日本語 · A1" : "Spanish · A1"}</span></div>
       <div className="mb-2 flex items-center justify-between text-xs text-zinc-400">
         <span aria-live="polite">Question {questionNumber} of {SESSION_LENGTH}</span>

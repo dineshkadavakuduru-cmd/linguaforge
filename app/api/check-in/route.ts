@@ -13,6 +13,13 @@ function todayForTimezone(timezone: string) {
   }
 }
 
+// Anchor at local noon so a one-day subtraction can never slip across a DST
+// boundary and report the wrong calendar day.
+function yesterdayForTimezone(timezone: string) {
+  const today = todayForTimezone(timezone);
+  return formatInTimeZone(subDays(parseISO(`${today}T12:00:00Z`), 1), timezone, "yyyy-MM-dd");
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json() as { uid?: string };
@@ -24,43 +31,55 @@ export async function POST(request: Request) {
     }
 
     const userRef = adminDb.collection("users").doc(body.uid);
-    const snapshot = await userRef.get();
-    if (!snapshot.exists) return NextResponse.json({ error: "User profile not found." }, { status: 404 });
 
-    const user = snapshot.data() as UserDoc;
-    const timezone = user.timezone || "UTC";
-    const today = todayForTimezone(timezone);
-    const lastCheckIn = user.lastCheckInDate;
-    if (lastCheckIn === today) {
-      const response: CheckInResponse = { streakCount: user.streakCount, xp: user.xp, alreadyCheckedIn: true, usedStreakFreeze: false };
-      return NextResponse.json(response);
-    }
+    // A streak is a read-modify-write over the same document. Running it inside
+    // a transaction makes a second tab / a reload racing at local midnight
+    // increment the streak exactly once.
+    const outcome = await adminDb.runTransaction(async (transaction) => {
+      const snapshot = await transaction.get(userRef);
+      if (!snapshot.exists) return { status: 404 as const };
 
-    const yesterday = formatInTimeZone(subDays(parseISO(`${today}T12:00:00Z`), 1), timezone, "yyyy-MM-dd");
-    let streakCount = Math.max(1, user.streakCount || 0);
-    let usedStreakFreeze = false;
-    if (lastCheckIn === yesterday) {
-      streakCount += 1;
-    } else if (lastCheckIn && isAfter(parseISO(today), parseISO(lastCheckIn))) {
-      if ((user.streakFreezeCount || 0) > 0) {
-        usedStreakFreeze = true;
-      } else {
-        streakCount = 1;
+      const user = snapshot.data() as UserDoc;
+      const timezone = user.timezone || "UTC";
+      const today = todayForTimezone(timezone);
+      const lastCheckIn = user.lastCheckInDate;
+
+      if (lastCheckIn === today) {
+        const response: CheckInResponse = { streakCount: user.streakCount, xp: user.xp, alreadyCheckedIn: true, usedStreakFreeze: false };
+        return { status: 200 as const, response };
       }
-    }
 
-    const xp = (user.xp || 0) + 10;
-    const update = {
-      streakCount,
-      xp,
-      streakFreezeCount: usedStreakFreeze ? Math.max(0, (user.streakFreezeCount || 0) - 1) : user.streakFreezeCount || 0,
-      lastCheckInDate: today,
-      updatedAt: FieldValue.serverTimestamp(),
-    };
-    await userRef.set(update, { merge: true });
+      const yesterday = yesterdayForTimezone(timezone);
+      let streakCount = Math.max(1, user.streakCount || 0);
+      let usedStreakFreeze = false;
 
-    const response: CheckInResponse = { streakCount, xp, alreadyCheckedIn: false, usedStreakFreeze };
-    return NextResponse.json(response);
+      if (lastCheckIn === yesterday) {
+        // Consecutive calendar day: extend the streak.
+        streakCount += 1;
+      } else if (lastCheckIn && isAfter(parseISO(today), parseISO(lastCheckIn))) {
+        // Missed at least one day: a freeze preserves the run, otherwise reset.
+        if ((user.streakFreezeCount || 0) > 0) {
+          usedStreakFreeze = true;
+        } else {
+          streakCount = 1;
+        }
+      }
+
+      const xp = (user.xp || 0) + 10;
+      transaction.set(userRef, {
+        streakCount,
+        xp,
+        streakFreezeCount: usedStreakFreeze ? Math.max(0, (user.streakFreezeCount || 0) - 1) : user.streakFreezeCount || 0,
+        lastCheckInDate: today,
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+
+      const response: CheckInResponse = { streakCount, xp, alreadyCheckedIn: false, usedStreakFreeze };
+      return { status: 200 as const, response };
+    });
+
+    if (outcome.status === 404) return NextResponse.json({ error: "User profile not found." }, { status: 404 });
+    return NextResponse.json(outcome.response);
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to check in." }, { status: 500 });
   }

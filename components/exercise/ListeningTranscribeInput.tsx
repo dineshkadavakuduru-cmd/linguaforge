@@ -61,7 +61,7 @@ export function ListeningTranscribeInput({
           </button>
           <div>
             <p className="text-sm text-zinc-400">Listen and type what you hear</p>
-            <p className="text-xs text-zinc-600">(Listening simulation - text shown below)</p>
+            <p className="text-xs text-zinc-400">(Listening simulation - text shown below)</p>
           </div>
         </div>
         {!played && (

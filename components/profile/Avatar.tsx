@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import type { User } from "firebase/auth";
 
 function avatarColor(uid: string) {
@@ -10,5 +11,29 @@ function avatarColor(uid: string) {
 
 export function Avatar({ user, size = "lg" }: { user: User; size?: "sm" | "lg" }) {
   const initials = (user.displayName || user.email || "L").trim().charAt(0).toUpperCase();
-  return user.photoURL ? <img src={user.photoURL} alt={`${user.displayName || "Learner"} avatar`} className={`${size === "lg" ? "h-20 w-20" : "h-10 w-10"} rounded-full border border-white/10 object-cover`} /> : <span style={{ backgroundColor: avatarColor(user.uid) }} className={`${size === "lg" ? "h-20 w-20 text-3xl" : "h-10 w-10 text-base"} grid place-items-center rounded-full font-display text-white`}>{initials}</span>;
+  const dimension = size === "lg" ? 80 : 40;
+  const sizeClass = size === "lg" ? "h-20 w-20 text-3xl" : "h-10 w-10 text-base";
+
+  if (user.photoURL) {
+    return (
+      <Image
+        src={user.photoURL}
+        alt={`${user.displayName || "Learner"} avatar`}
+        width={dimension}
+        height={dimension}
+        unoptimized
+        className={`${sizeClass} rounded-full border border-white/10 object-cover`}
+      />
+    );
+  }
+
+  return (
+    <span
+      style={{ backgroundColor: avatarColor(user.uid) }}
+      aria-hidden="true"
+      className={`${sizeClass} grid place-items-center rounded-full font-display text-white`}
+    >
+      {initials}
+    </span>
+  );
 }

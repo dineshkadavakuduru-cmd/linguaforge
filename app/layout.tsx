@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { SITE_URL } from "@/lib/site";
 import { AuthProvider } from "@/components/providers/AuthProvider";
@@ -19,9 +19,6 @@ export const metadata: Metadata = {
     template: "%s | LinguaForge",
   },
   description: "Learn languages with a calmer, more deliberate practice loop.",
-  alternates: {
-    canonical: "/",
-  },
   openGraph: {
     type: "website",
     url: SITE_URL,
@@ -41,6 +38,11 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
   robots: { index: true, follow: true },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a0a0f",
+  colorScheme: "dark light",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
