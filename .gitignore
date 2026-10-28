@@ -4,6 +4,7 @@ out/
 .env
 .env.local
 .env.*.local
+.env.example
 firebase-debug.log
 functions/lib/
 
