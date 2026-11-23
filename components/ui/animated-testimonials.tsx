@@ -117,7 +117,7 @@ export function AnimatedTestimonials({ testimonials }: { testimonials: Testimoni
             id={`testimonial-tab-${index}`}
             aria-selected={active === index}
             aria-controls={`testimonial-panel-${index}`}
-            aria-label={`Example from ${testimonial.name}, ${testimonial.detail}`}
+            aria-label={`Illustrative example: ${testimonial.name}, ${testimonial.detail}`}
             onClick={() => goTo(index)}
             onFocus={() => setActive(index)}
             className={`
